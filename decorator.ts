@@ -1,78 +1,111 @@
-function htmlOutput(flag: boolean):any {
-    if (flag) {
-        return function (constructorFn: Function) {
-            constructorFn.prototype.showHtml = function (css_class: string = "") {
-                const output_tag = document.createElement("div")
-                css_class.length ? output_tag.classList.add(css_class) : null
-                output_tag.innerHTML = JSON.stringify(this)
-                document.body.appendChild(output_tag)
-
-                Object.defineProperty(this, "id", {
-                    enumerable: false,
-                    configurable: false,
-                    writable: false
-                })
-
-                Object.defineProperty(this, "showHtml", {
-                    enumerable: false,
-                    configurable: false,
-                    writable: false
-                })
-            }
-        }
-    }
-    return
-}
-
-/*function logName(target: any, propName: string | Symbol) {
-    console.log(target)
-    console.log(propName)
-}*/
-
 function logMethod(target: any, propName: string | Symbol, descriptor: PropertyDescriptor) {
     console.log(target)
     console.log(propName)
     console.log(descriptor)
 }
 
-@htmlOutput(true)
+interface IntUserDecorator {
+    selector: string,
+    template: string
+}
+
+const HtmlOutput = (config: IntUserDecorator) => {
+    return (Constructor: any):any => {
+        return class extends Constructor {
+            constructor(...args: any[]) {
+                super(...args);
+                Object.defineProperty(this, "id", {
+                    enumerable: false,
+                    configurable: false,
+                    writable: false
+                })
+
+                Object.defineProperty(this, "age", {
+                    writable: false
+                })
+
+                Object.defineProperty(this, "random_scores", {
+                    enumerable: true,
+                    configurable: false,
+                    writable: false,
+                    value: Math.floor(Math.random() * 10000)
+                })
+
+                const purpose_tag = document.querySelector(config.selector)!
+                purpose_tag.innerHTML += `<div id="user_id_${args[0]}">${config.template}</div>`
+                const value_name_tag = purpose_tag.querySelector(`#user_id_${args[0]} .user__row_name .user__value`)!
+                value_name_tag.textContent = `${args[1]} ${args[2]}`
+                const value_age_tag = purpose_tag.querySelector(`#user_id_${args[0]} .user__row_age .user__value`)!
+                value_age_tag.textContent = args[3]
+                const value_pos_tag = purpose_tag.querySelector(`#user_id_${args[0]} .user__row_pos .user__value`)!
+                value_pos_tag.textContent = args[4]
+            }
+        }
+    }
+}
+
+@HtmlOutput({
+    selector: '#user',
+    template: `
+        <div class="user">
+          <div class="user__row user__row_name">
+            <span class="user__label">name:</span>
+            <span class="user__value"></span>
+          </div>
+          <div class="user__row user__row_age">
+            <span class="user__label">age:</span>
+            <span class="user__value"></span>
+          </div>
+          <div class="user__row user__row_pos">
+            <span class="user__label">position:</span>
+            <span class="user__value"></span>
+          </div>
+        </div>
+    `
+})
 class User {
     id: number;
-    name: string;
+    firstName: string;
+    lastName: string;
     age: number;
-    job: string
+    position: string
 
-    constructor(id: any, name: string, age: number, job: string) {
+    constructor(id: number, firstName: string, lastName: string, age: number, position: string) {
         this.id = id
-        this.name = name
+        this.firstName = firstName
+        this.lastName = lastName
         this.age = age
-        this.job = job
+        this.position = position
     }
 
-    @logMethod
     getFullInfo():string {
-        return `name: ${this.name}, age: ${this.age}, job: ${this.job}`
-    }
-
-    get userName():string {
-        return this.name
+        return `name: ${this.firstName} ${this.lastName}, age: ${this.age}, job: ${this.position}`
     }
 }
 
-let user: any = new User(1, "John Jones", 30, "fighter")
-user.showHtml("foo")
-let user2: any = new User(2, "Daniel Cormier", 40, "fighter")
-user2.showHtml()
-let user3: any = new User(3, "Dana White", 50, "director")
-user3.showHtml("bar")
-let user4: any = new User(4, "Joe Rogan", 50, "interviewer")
-user4.showHtml("lorem")
+let user1 = new User(1, "John", "Jones", 30, "fighter")
+let user2 = new User(2, "Daniel", "Cormier", 40, "fighter")
+let user3 = new User(3, "Dana", "White", 50, "president")
+let user4 = new User(4, "Joe", "Rogan", 50, "podcaster, commentator")
 
-for (let prop in user) {
-    console.log(`${prop}: ${user[prop]}`)
+const users: any[] = [user1, user2, user3, user4]
+
+try {
+    user2.age = 100
+} catch (err: any) {
+    console.warn(new Error(err))
+    console.warn(user2)
 }
 
-console.log(user.getFullInfo())
+users.forEach(item => {
+    for (let prop in item) {
+        console.log(`${prop}: ${item[prop]}`)
+    }
+    console.log("-------------------")
+})
+
+
+
 
 
 
