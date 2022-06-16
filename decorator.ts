@@ -1,64 +1,65 @@
-function logMethod(target: any, propName: string | Symbol, descriptor: PropertyDescriptor) {
-    console.log(target)
-    console.log(propName)
-    console.log(descriptor)
+import {HtmlOutputConfig, TypeUser} from './interfaces'
+
+/*const CountGetFullInfo = (Constructor: any, propName: string | Symbol, descriptor: PropertyDescriptor):any => {
+
+}*/
+
+const PropsUpdate = (Constructor: any):any => {
+    return class extends Constructor {
+        constructor(arg: TypeUser) {
+            super(arg);
+            Object.defineProperty(this, "id", {
+                enumerable: false,
+                configurable: false,
+                writable: false
+            })
+
+            Object.defineProperty(this, "age", {
+                writable: false
+            })
+
+            Object.defineProperty(this, "random_scores", {
+                enumerable: true,
+                configurable: false,
+                writable: false,
+                value: Math.floor(Math.random() * 10000)
+            })
+        }
+    }
 }
 
-interface IntUserDecorator {
-    selector: string,
-    template: string
-}
-
-const HtmlOutput = (config: IntUserDecorator) => {
+const HtmlOutput = (config: HtmlOutputConfig) => {
     return (Constructor: any):any => {
         return class extends Constructor {
-            constructor(...args: any[]) {
-                super(...args);
-                Object.defineProperty(this, "id", {
-                    enumerable: false,
-                    configurable: false,
-                    writable: false
-                })
-
-                Object.defineProperty(this, "age", {
-                    writable: false
-                })
-
-                Object.defineProperty(this, "random_scores", {
-                    enumerable: true,
-                    configurable: false,
-                    writable: false,
-                    value: Math.floor(Math.random() * 10000)
-                })
-
+            constructor(arg: TypeUser | any) {
+                super(arg);
                 const purpose_tag = document.querySelector(config.selector)!
-                purpose_tag.innerHTML += `<div id="user_id_${args[0]}">${config.template}</div>`
-                const value_name_tag = purpose_tag.querySelector(`#user_id_${args[0]} .user__row_name .user__value`)!
-                value_name_tag.textContent = `${args[1]} ${args[2]}`
-                const value_age_tag = purpose_tag.querySelector(`#user_id_${args[0]} .user__row_age .user__value`)!
-                value_age_tag.textContent = args[3]
-                const value_pos_tag = purpose_tag.querySelector(`#user_id_${args[0]} .user__row_pos .user__value`)!
-                value_pos_tag.textContent = args[4]
+                let template = config.template
+                for (let prop in arg) {
+                    template = template.replace(new RegExp(`{{(${prop})}}`, "gi"), arg[prop])
+                }
+                purpose_tag.innerHTML += template
             }
         }
     }
 }
 
+@PropsUpdate
 @HtmlOutput({
     selector: '#user',
     template: `
-        <div class="user">
-          <div class="user__row user__row_name">
+        <div class="user user_{{id}}">
+          <div class="user__row">
             <span class="user__label">name:</span>
-            <span class="user__value"></span>
+            <span class="user__value">{{firstName}} {{LastName}}</span>
           </div>
-          <div class="user__row user__row_age">
+          <div class="user__row">
             <span class="user__label">age:</span>
-            <span class="user__value"></span>
+            <span class="user__value">{{age}}</span>
           </div>
-          <div class="user__row user__row_pos">
+          <div class="user__row">
             <span class="user__label">position:</span>
-            <span class="user__value"></span>
+            <span class="user__value">{{position}}</span>
           </div>
         </div>
     `
@@ -70,31 +71,32 @@ class User {
     age: number;
     position: string
 
-    constructor(id: number, firstName: string, lastName: string, age: number, position: string) {
-        this.id = id
-        this.firstName = firstName
-        this.lastName = lastName
-        this.age = age
-        this.position = position
+    constructor(argObj: TypeUser) {
+        this.id = argObj.id
+        this.firstName = argObj.firstName
+        this.lastName = argObj.lastName
+        this.age = argObj.age
+        this.position = argObj.position
     }
 
-    getFullInfo():string {
+    //@CountGetFullInfo
+    /*public getFullInfo() {
         return `name: ${this.firstName} ${this.lastName}, age: ${this.age}, job: ${this.position}`
-    }
+    }*/
 }
 
-let user1 = new User(1, "John", "Jones", 30, "fighter")
-let user2 = new User(2, "Daniel", "Cormier", 40, "fighter")
-let user3 = new User(3, "Dana", "White", 50, "president")
-let user4 = new User(4, "Joe", "Rogan", 50, "podcaster, commentator")
+let user1: TypeUser = new User({id: 1, firstName: "John", lastName: "Jones", age: 30, position: "fighter"})
+let user2: TypeUser = new User({id: 2, firstName: "Daniel", lastName: "Cormier", age: 40, position: "fighter"})
+let user3: TypeUser = new User({id: 3, firstName: "Dana", lastName: "White", age:  50, position:  "president"})
+let user4: TypeUser = new User({id: 4, firstName: "Joe", lastName: "Rogan", age: 50, position: "podcaster, commentator"})
 
 const users: any[] = [user1, user2, user3, user4]
 
 try {
-    user2.age = 100
+    user3.age = 100
 } catch (err: any) {
     console.warn(new Error(err))
-    console.warn(user2)
+    console.warn(user3)
 }
 
 users.forEach(item => {
@@ -103,9 +105,3 @@ users.forEach(item => {
     }
     console.log("-------------------")
 })
-
-
-
-
-
-
